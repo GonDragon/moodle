@@ -643,8 +643,7 @@ class grade_item extends grade_object {
 
             if ($cascade) {
                 $grades = $this->get_final();
-                foreach($grades as $g) {
-                    $grade = new grade_grade($g, false);
+                foreach($grades as $grade) {
                     $grade->grade_item =& $this;
                     $grade->set_locked(1, null, false);
                 }
@@ -1327,23 +1326,26 @@ class grade_item extends grade_object {
      */
     public function get_final($userid=NULL) {
         global $DB;
+        $result;
         if ($userid) {
-            if ($user = $DB->get_record('grade_grades', array('itemid' => $this->id, 'userid' => $userid))) {
-                return $user;
+            if ($grades = $DB->get_records('grade_grades', array('itemid' => $this->id, 'userid' => $userid))) {
+                foreach ($grades as $grade) {
+                    $result[$userid] = new grade_grade($grade, false);
+                }
             }
 
         } else {
             if ($grades = $DB->get_records('grade_grades', array('itemid' => $this->id))) {
                 //TODO: speed up with better SQL (MDL-31380)
-                $result = array();
                 foreach ($grades as $grade) {
-                    $result[$grade->userid] = $grade;
+                    $result[$grade->userid] = new grade_grade($grade, false);
                 }
-                return $result;
-            } else {
-                return array();
             }
         }
+        if(count($result) == 1) {
+            return array_shift($result);
+        }
+        return $result;
     }
 
     /**
